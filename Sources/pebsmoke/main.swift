@@ -2059,6 +2059,64 @@ do {
         check("ice glide = \(String(format: "%.3f", perTick * 20)) b/s",
               abs(perTick - expect) < 1e-6)
     }
+    // 9) NPC virtual-player (body): an NPC is a Player subclass that drives itself
+    //    only through movement intents + the same travel(). Pin that it (a) reproduces
+    //    bit-for-bit from a seed, (b) its idle wander actually relocates it, and (c) it
+    //    walks to an explicit target under real physics rather than teleporting.
+    do {
+        // NPC.tick() runs travel() itself, so — unlike mkPlayer — we never call travel()
+        // separately, or physics would be applied twice.
+        func mkNPC(_ seed: UInt32) -> (World, NPC, Int) {
+            let (w, gy) = flatWorld()
+            let npc = NPC(world: w)
+            npc.setPos(0.5, Double(gy), 0.5)
+            npc.rng = RandomX(seed)
+            w.addEntity(npc)
+            for _ in 0..<5 { npc.tick() }   // settle onto the ground
+            return (w, npc, gy)
+        }
+
+        // Entity.world is an unowned reference, so the World must be retained for the
+        // whole scenario — withExtendedLifetime keeps it alive across the tick loop.
+
+        // (a) determinism — identical seed + identical inputs ⇒ bit-identical end state.
+        func wanderEnd(_ seed: UInt32) -> (UInt64, UInt64, UInt64) {
+            let (w, npc, _) = mkNPC(seed)
+            return withExtendedLifetime(w) {
+                for _ in 0..<400 { npc.tick() }   // idle wander steers itself via npc.rng
+                return (npc.x.bitPattern, npc.z.bitPattern, npc.yaw.bitPattern)
+            }
+        }
+        check("NPC body is deterministic (same seed ⇒ bit-identical end-state)",
+              wanderEnd(12345) == wanderEnd(12345))
+
+        // (b) the idle wander genuinely moves the NPC (it isn't standing still).
+        do {
+            let (w, npc, _) = mkNPC(7)
+            withExtendedLifetime(w) {
+                let (sx, sz) = (npc.x, npc.z)
+                for _ in 0..<400 { npc.tick() }
+                let moved = ((npc.x - sx) * (npc.x - sx) + (npc.z - sz) * (npc.z - sz)).squareRoot()
+                check("NPC idle-wander relocates it (moved \(String(format: "%.2f", moved)) blocks)",
+                      moved > 1.0)
+            }
+        }
+
+        // (c) navigation reaches an explicit target under real travel() — no teleport:
+        //     it must walk there within a bounded tick budget.
+        do {
+            let (w, npc, gy) = mkNPC(3)
+            withExtendedLifetime(w) {
+                let tx = 8.5, tz = 6.5
+                check("NPC accepts a path to target", npc.navigateTo(tx, Double(gy), tz))
+                var ticks = 0
+                while !npc.navigationDone() && ticks < 400 { npc.tick(); ticks += 1 }
+                let d = ((npc.x - tx) * (npc.x - tx) + (npc.z - tz) * (npc.z - tz)).squareRoot()
+                check("NPC navigates to target in \(ticks) ticks (dist \(String(format: "%.2f", d)))",
+                      npc.navigationDone() && d < 1.5, "ticks \(ticks) dist \(d)")
+            }
+        }
+    }
 }
 
 print("\n\(passed) passed, \(failed) failed")

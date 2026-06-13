@@ -1223,6 +1223,8 @@ final class WorldRenderer {
            hasModel("villager_\(prof)") {
             return "villager_\(prof)"
         }
+        // an NPC is a virtual player — draw it with the player biped model/skin
+        if type == "npc" { return "player" }
         if hasModel(type) { return type }
         if type == "arrow" || type == "trident" { return "arrow_model" }
         if type == "end_crystal" { return "end_crystal_model" }
