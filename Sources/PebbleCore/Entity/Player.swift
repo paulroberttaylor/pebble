@@ -14,7 +14,9 @@ public enum GameMode {
     public static let creative = 1
 }
 
-public final class Player: LivingEntity {
+// Non-final so NPC can subclass it and inherit the exact same vanilla
+// physics/inventory/hunger rules by construction (see Entity/NPC.swift).
+public class Player: LivingEntity {
     public override var type: String { "player" }
     public override var isPlayer: Bool { true }
     private var _gameMode = GameMode.survival

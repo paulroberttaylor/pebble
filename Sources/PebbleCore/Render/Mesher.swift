@@ -496,7 +496,13 @@ final class SectionMesher {
         // glow lichen / sculk vein: meta = attach dir 0..5
         let d = meta % 6
         if d == 0 { emitFlatTop(b, xd, yd - 14.0 / 16, zd, tile, sky, blk, tint, 15.0 / 16) }
-        else if d == 1 { emitFlatTop(b, xd, yd + 14.2 / 16 - 14.0 / 16, zd, tile, sky, blk, tint, 1.0 / 16 + 14.2 / 16 - 15.0 / 16 + 14.0 / 16) }
+        else if d == 1 {
+            // Split into explicitly-typed sub-expressions: the inline constant
+            // chains made the release-mode type-checker time out.
+            let yOff: Double = 14.2 / 16 - 14.0 / 16
+            let vEnd: Double = 1.0 / 16 + 14.2 / 16 - 15.0 / 16 + 14.0 / 16
+            emitFlatTop(b, xd, yd + yOff, zd, tile, sky, blk, tint, vEnd)
+        }
         else {
             let zq = d == 2 ? zd + e : d == 3 ? zd + 1 - e : 0
             let xq = d == 4 ? xd + e : d == 5 ? xd + 1 - e : 0
