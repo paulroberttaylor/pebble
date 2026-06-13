@@ -361,7 +361,10 @@ final class EntityRendererM {
         pose(g, p, time)
         var m = matrix_identity_float4x4
         m = mTranslate(m, Float(p.x - camPos.x), Float(p.y - camPos.y), Float(p.z - camPos.z))
-        m = mRotateY(m, Float(-p.yaw))
+        // Models are authored facing model -Z, but yaw=0 means facing +Z (the forward
+        // movement/camera direction), so the body needs a compensating 180° turn — without
+        // it every entity renders facing opposite its travel ("walking backwards").
+        m = mRotateY(m, Float(.pi - p.yaw))
         let sc = Float(p.scale * g.model.scale * (p.baby ? 0.5 : 1))
         m = mScale(m, sc, sc, sc)
 
