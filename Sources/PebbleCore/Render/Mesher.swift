@@ -497,10 +497,15 @@ final class SectionMesher {
         let d = meta % 6
         if d == 0 { emitFlatTop(b, xd, yd - 14.0 / 16, zd, tile, sky, blk, tint, 15.0 / 16) }
         else if d == 1 {
-            // Split into explicitly-typed sub-expressions: the inline constant
-            // chains made the release-mode type-checker time out.
-            let yOff: Double = 14.2 / 16 - 14.0 / 16
-            let vEnd: Double = 1.0 / 16 + 14.2 / 16 - 15.0 / 16 + 14.0 / 16
+            // Accumulate one operation per statement: the inline constant chain
+            // made the release-mode type-checker time out. Same left-associative
+            // order as before, so the result is bit-identical (mesh is golden-tested).
+            var yOff: Double = 14.2 / 16
+            yOff -= 14.0 / 16
+            var vEnd: Double = 1.0 / 16
+            vEnd += 14.2 / 16
+            vEnd -= 15.0 / 16
+            vEnd += 14.0 / 16
             emitFlatTop(b, xd, yd + yOff, zd, tile, sky, blk, tint, vEnd)
         }
         else {
