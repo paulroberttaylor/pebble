@@ -68,6 +68,8 @@ public func registerAllEntities() {
     reg("fishing_bobber") { FishingBobber(world: $0) }; reg("llama_spit") { LlamaSpit(world: $0) }
     reg("boat") { Boat(world: $0) }; reg("minecart") { Minecart(world: $0) }
     reg("player") { Player(world: $0) }
+    // appended last so existing entityTypes() indices are unchanged
+    reg("npc") { NPC(world: $0) }
 
     bindSpawnMob(spawnMob)
 }
